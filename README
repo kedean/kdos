@@ -4,3 +4,9 @@ KDOS
 A simple ring-0 operating system built from scratch.
 
 Currently capable of running an echo program with periodic background threads.
+
+Dependencies: qemu, gcc, nasm
+
+To run in qemu: `make run` or `make qemu`
+
+Bochs support is sparse, currently.
