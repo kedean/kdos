@@ -2,7 +2,6 @@
 
 #include "../kernel/types.h"
 #include "../kernel/interrupts.h"
-#include "../kernel/time.h"
 
 #include "../syscalls/syscall.h"
 
