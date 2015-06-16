@@ -35,7 +35,6 @@ void main(){
 	keyboard_init();
 
 	interrupts_enable();
-
 	thread_init(1000);
 
 	THREAD* a = thread_create(&print_a);

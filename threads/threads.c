@@ -14,31 +14,35 @@ uint_t milliseconds_to_context_switch;
 uint_t context_switch_quantum;
 void thread_context_switch_handler(interrupt_data_s*);
 
-list_s* active_threads;
-list_node_s* current_thread_node;
+list_s* active_threads = NULL;
+list_node_s* current_thread_node = NULL;
 uint_t max_thread_count;
 
 void time_systimer_handler(interrupt_data_s* r){
-	list_node_s* first = list_first(active_threads);
-	list_node_s* examining = first;
 
-	do{
-		THREAD* thread = (THREAD*) examining->data;
+	if(current_thread_node != NULL){
+		list_node_s* examining = current_thread_node;
 
-		if(thread->sleep_millis_remaining > 0){
-			thread->sleep_millis_remaining -= tick_speed;
+		do{
+			THREAD* thread = (THREAD*) examining->data;
 
-			if(thread->sleep_millis_remaining < 0){ //TODO: use a max function here
-				thread->sleep_millis_remaining = 0;
+			if(thread != NULL && thread->sleep_millis_remaining > 0){
+				thread->sleep_millis_remaining -= tick_speed;
+
+				if(thread->sleep_millis_remaining < 0){ //TODO: use a max function here
+					thread->sleep_millis_remaining = 0;
+				}
 			}
-		}
-		examining = list_get_next(active_threads, examining);
-	} while(examining != first); //once it is the first thread again, we have looped
+			examining = list_get_next(active_threads, examining);
+		} while(examining != current_thread_node); //once it is the first thread again, we have looped
+	}
 
 	if(tick_speed > milliseconds_to_context_switch){
 		milliseconds_to_context_switch = 0;
 
-		thread_context_switch_handler(r);
+		if(active_threads != NULL){
+			thread_context_switch_handler(r);
+		}
 
 		milliseconds_to_context_switch = context_switch_quantum;
 	} else{
@@ -77,9 +81,9 @@ void sleep(int milliseconds){
 extern uint_t get_eip(void);
 
 void thread_init(uint_t max_threads){
-	max_thread_count = max_threads;
 
-	active_threads = list_create(max_thread_count);
+	max_thread_count = max_threads;
+	active_threads = list_create(sizeof(THREAD*));
 
 	//create the thread struct for the kernel
 	THREAD* kernel = (THREAD*) malloc(sizeof(THREAD));
@@ -87,7 +91,7 @@ void thread_init(uint_t max_threads){
 	kernel->sleep_millis_remaining = 0;
 	thread_queue(kernel);
 
-	current_thread_node = list_first(active_threads);
+	current_thread_node = active_threads->head;
 }
 
 THREAD* thread_create(void (*func)()){
