@@ -68,29 +68,7 @@ void list_remove(list_s* list, uint_t index){
 	}
 }
 
-void* list_pop(list_s* list){
-	if(list->tail == NULL){
-		return NULL;
-	} else{
-		void* ret = list->tail->data;
-		
-		list_node_s* tail = list->tail;
-		list->tail = tail->prev;
-
-		if(list->tail != NULL){
-			list->tail->next = NULL;
-		}
-		if(list->head == tail){
-			list->head = NULL;
-		}
-
-		free(tail);
-
-		return ret;
-	}
-}
-
-void list_push(list_s* list, void* data){
+void list_append(list_s* list, void* data){
 	list_node_s* node = malloc(sizeof(list_node_s));
 	node->prev = list->tail;
 	node->next = NULL;
@@ -104,4 +82,20 @@ void list_push(list_s* list, void* data){
 	}
 
 	list->tail = node;
+}
+
+list_node_s* list_get_next(list_s* list, list_node_s* current){
+	if(list->tail == current){
+		return list->head;
+	} else{
+		return current->next;
+	}
+}
+
+list_node_s* list_get_prev(list_s* list, list_node_s* current){
+	if(list->head == current){
+		return list->tail;
+	} else {
+		return current->prev;
+	}
 }

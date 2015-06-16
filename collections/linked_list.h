@@ -25,8 +25,6 @@ void* list_first(list_s* list);
 
 void* list_last(list_s* list);
 
-void* list_pop(list_s* list);
-
 void list_remove(list_s* list, uint_t index);
 
 void list_append(list_s* list, void* data);

@@ -10,7 +10,7 @@ typedef struct THREAD {
 } THREAD;
 
 THREAD* thread_create(void (*func)());
-int thread_queue(THREAD* thread);
+void thread_queue(THREAD* thread);
 void thread_init(uint_t);
 void thread_enable();
 void thread_yield();

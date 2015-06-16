@@ -2,6 +2,7 @@
 #include "../kernel/ports.h"
 #include "../memory/memory.h"
 #include "../io/screen_io.h"
+#include "../collections/linked_list.h"
 
 /*
  * Timing functions
@@ -13,19 +14,26 @@ uint_t milliseconds_to_context_switch;
 uint_t context_switch_quantum;
 void thread_context_switch_handler(interrupt_data_s*);
 
-THREAD** running_threads; //implemented as a simple array of threads, non-zero entries are running threads, NOTE: replace this with a more efficient structure
+list_s* active_threads;
+list_node_s* current_thread_node;
 uint_t max_thread_count;
-uint_t current_thread_index;
 
 void time_systimer_handler(interrupt_data_s* r){
-	for(int i = 0; i < max_thread_count; i++){
-		if(running_threads[i] != NULL && running_threads[i]->sleep_millis_remaining > 0){
-			running_threads[i]->sleep_millis_remaining -= tick_speed;
-			if(running_threads[i]->sleep_millis_remaining < 0){
-				running_threads[i]->sleep_millis_remaining = 0;
+	list_node_s* first = list_first(active_threads);
+	list_node_s* examining = first;
+
+	do{
+		THREAD* thread = (THREAD*) examining->data;
+
+		if(thread->sleep_millis_remaining > 0){
+			thread->sleep_millis_remaining -= tick_speed;
+
+			if(thread->sleep_millis_remaining < 0){ //TODO: use a max function here
+				thread->sleep_millis_remaining = 0;
 			}
 		}
-	}
+		examining = list_get_next(active_threads, examining);
+	} while(examining != first); //once it is the first thread again, we have looped
 
 	if(tick_speed > milliseconds_to_context_switch){
 		milliseconds_to_context_switch = 0;
@@ -55,7 +63,7 @@ void time_init(unsigned short speed){
 }
 
 void sleep(int milliseconds){
-	THREAD* thread = running_threads[current_thread_index];
+	THREAD* thread = current_thread_node->data;
 	thread->sleep_millis_remaining = milliseconds;
 	while(thread->sleep_millis_remaining > 0){
 		thread_yield();
@@ -71,15 +79,15 @@ extern uint_t get_eip(void);
 void thread_init(uint_t max_threads){
 	max_thread_count = max_threads;
 
-	uint_t thread_heap_size = sizeof(THREAD*) * max_threads;
-	running_threads = malloc(thread_heap_size);
-	memset(running_threads, 0, thread_heap_size);
+	active_threads = list_create(max_thread_count);
 
 	//create the thread struct for the kernel
 	THREAD* kernel = (THREAD*) malloc(sizeof(THREAD));
 	kernel->is_running = true;
 	kernel->sleep_millis_remaining = 0;
-	current_thread_index = thread_queue(kernel);
+	thread_queue(kernel);
+
+	current_thread_node = list_first(active_threads);
 }
 
 THREAD* thread_create(void (*func)()){
@@ -104,15 +112,8 @@ THREAD* thread_create(void (*func)()){
 	return thread;
 }
 
-int thread_queue(THREAD* thread){
-	for(int i = 0; i < max_thread_count; i++){
-		if(running_threads[i] == 0){ //free spot
-			running_threads[i] = thread;
-			return i;
-		}
-	}
-
-	return -1;
+void thread_queue(THREAD* thread){
+	list_append(active_threads, thread);
 }
 
 void thread_yield(){
@@ -120,7 +121,7 @@ void thread_yield(){
 }
 
 void thread_kill_current(){
-	interrupts_disable();
+	/*interrupts_disable();
 	THREAD* thread = running_threads[current_thread_index];
 	int next_thread_index = get_future_thread_index(current_thread_index);
 	running_threads[current_thread_index] = NULL;
@@ -128,40 +129,23 @@ void thread_kill_current(){
 	milliseconds_to_context_switch = 0;
 	interrupts_enable();
 
-	for(;;);
-}
-
-int get_future_thread_index(uint_t current){
-	uint_t next_index = current;
-	for(;;){
-		next_index++;
-
-		if(next_index == current){
-			return -1;
-		} else if(next_index == max_thread_count){
-			next_index = -1; //-1 means it will increment to 0 next round, resetting the queue
-		} else if(running_threads[next_index] != NULL){
-			break;
-		}
-	}
-
-	return next_index;
+	for(;;);*/
 }
 
 void thread_context_switch_handler(interrupt_data_s* r){
-	THREAD* current_thread = running_threads[current_thread_index];
-	int next_thread_index = get_future_thread_index(current_thread_index);
+	list_node_s* next_thread_node = list_get_next(active_threads, current_thread_node);
 
-	//store registers
-	if(next_thread_index >= 0){
+	if(next_thread_node != NULL){
+		THREAD* future_thread = next_thread_node->data;
+		THREAD* current_thread = current_thread_node->data;
+
 		current_thread->idata = *r;
-		THREAD* future_thread = running_threads[next_thread_index];
 //		printf("ni = %d, eax = %x, ebp = %x, esp = %x\n", next_thread_index, future_thread->idata.eax, future_thread->idata.ebp, future_thread->idata.esp);
 
 		current_thread->is_running = false;
 		future_thread->is_running = true;
 
-		current_thread_index = next_thread_index;
+		current_thread_node = next_thread_node;
 		*r = future_thread->idata;
 
 		// printf("\n-- context switch --\n");
