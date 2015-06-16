@@ -5,13 +5,13 @@
 typedef struct THREAD {
 	interrupt_data_s idata;
 	bool is_running;
-	int sleep_millis_remaining;
+	double sleep_millis_remaining;
 	void (*func)();
 } THREAD;
 
 THREAD* thread_create(void (*func)());
 void thread_queue(THREAD* thread);
-void thread_init(uint_t);
+void thread_init();
 void thread_enable();
 void thread_yield();
 void thread_kill_current();
