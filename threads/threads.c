@@ -9,14 +9,13 @@
  */
 
 uint_t milliseconds_left = 0;
-uint_t tick_speed;
-uint_t milliseconds_to_context_switch;
-uint_t context_switch_quantum;
+double tick_speed = 0; //measured in milliseconds per tick
+uint_t ticks_to_context_switch = 0;
+uint_t context_switch_quantum = 0;
 void thread_context_switch_handler(interrupt_data_s*);
 
 list_s* active_threads = NULL;
 list_node_s* current_thread_node = NULL;
-uint_t max_thread_count;
 
 void time_systimer_handler(interrupt_data_s* r){
 
@@ -37,28 +36,28 @@ void time_systimer_handler(interrupt_data_s* r){
 		} while(examining != current_thread_node); //once it is the first thread again, we have looped
 	}
 
-	if(tick_speed > milliseconds_to_context_switch){
-		milliseconds_to_context_switch = 0;
+	ticks_to_context_switch--;
+
+	if(ticks_to_context_switch <= 0){
+		ticks_to_context_switch = 0;
 
 		if(active_threads != NULL){
 			thread_context_switch_handler(r);
 		}
 
-		milliseconds_to_context_switch = context_switch_quantum;
-	} else{
-		milliseconds_to_context_switch -= tick_speed;
+		ticks_to_context_switch = context_switch_quantum;
 	}
 }
 
-void time_init(unsigned short speed){
-	context_switch_quantum = 100;
-	milliseconds_to_context_switch = context_switch_quantum;
+void time_init(unsigned short speed_hz){
+	context_switch_quantum = 10; //in number of ticks
+	ticks_to_context_switch = context_switch_quantum;
 
 	interrupts_register_callback(INT_TIMER, &time_systimer_handler);
 
-	tick_speed = speed;
+	tick_speed = 1000.0 / (double) speed_hz;
 
-	unsigned int divisor = 1193180 / speed;
+	uint_t divisor = 1193182 / speed_hz;
 	if(!divisor){divisor++;}
 
 	port_byte_out(0x43, 0x36);
@@ -66,9 +65,10 @@ void time_init(unsigned short speed){
 	port_byte_out(0x40, divisor >> 8);
 }
 
-void sleep(int milliseconds){
+void sleep(uint_t milliseconds){
 	THREAD* thread = current_thread_node->data;
-	thread->sleep_millis_remaining = milliseconds;
+	thread->sleep_millis_remaining = (double) milliseconds;
+
 	while(thread->sleep_millis_remaining > 0){
 		thread_yield();
 	}
@@ -80,9 +80,8 @@ void sleep(int milliseconds){
 
 extern uint_t get_eip(void);
 
-void thread_init(uint_t max_threads){
+void thread_init(){
 
-	max_thread_count = max_threads;
 	active_threads = list_create(sizeof(THREAD*));
 
 	//create the thread struct for the kernel
@@ -121,7 +120,7 @@ void thread_queue(THREAD* thread){
 }
 
 void thread_yield(){
-	milliseconds_to_context_switch = 0;
+	ticks_to_context_switch = 0;
 }
 
 void thread_kill_current(){
