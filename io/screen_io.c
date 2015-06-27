@@ -4,6 +4,10 @@
 
 #include <stdarg.h>
 
+void screen_init(){
+	
+}
+
 void itoa(int value, char* buffer, int base){
 	static const int BASE_DIGIT = 48;
 	static const int HEX_ALPHA_BASE = 97 - 10;

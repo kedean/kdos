@@ -12,5 +12,7 @@
 
 #include "../threads/threads.h"
 
+#include "../io/pipes.h"
+
 #define assert(condition) ;
 #define halt() for(;;);

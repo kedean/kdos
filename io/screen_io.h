@@ -3,6 +3,11 @@
 #include "../kernel/types.h"
 
 /**
+ * Initialize the base screen pipe
+ */
+void screen_init();
+
+/**
  * Computes the string representation of the given value and places it into a buffer
  * @param value the value to stringify
  * @param buffer the character buffer to place the result in, must be large enough to accomodate
