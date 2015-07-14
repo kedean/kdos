@@ -25,8 +25,13 @@ void main(){
 	interrupts_enable();
 	thread_init(1000);
 
+	THREAD* screen_sync = thread_create(&screen_writer);
+	thread_queue(screen_sync);
+
 	THREAD* prog = thread_create(&clock);
 	thread_queue(prog);
+
+	screen_writer();
 
 	halt();
 }

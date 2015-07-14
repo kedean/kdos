@@ -78,3 +78,10 @@ char pipe_pop(pipe_handle_t handle);
  * @param length the number of characters to read
  */
 void pipe_read(pipe_handle_t handle, char* destination, uint_t length);
+
+/**
+ * Flushes n characters from the mouth of the pipe
+ * @param handle the pipe to flush
+ * @param length the number of characters to flush
+ */
+void pipe_flush(pipe_handle_t handle, uint_t length);

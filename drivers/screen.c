@@ -112,13 +112,20 @@ void print_char(char character, int col, int row, char attribute_byte){
 void clear_screen(){
 	int row, col;
 
+	lock(&print_lock);
+
+	unsigned char* vidmem = (unsigned char*) VIDEO_ADDRESS;
+	
 	for(row = 0; row < MAX_ROWS; row++){
 		for(col = 0; col < MAX_COLS; col++){
-			print_char(' ', col, row, WHITE_ON_BLACK);
+			int offset = get_screen_offset(col, row);
+			vidmem[offset] = ' ';
+			vidmem[offset+1] = WHITE_ON_BLACK;
 		}
 	}
 
 	set_cursor(get_screen_offset(0,0));
+	unlock(&print_lock);
 }
 
 void remove_char(){
@@ -128,8 +135,4 @@ void remove_char(){
 	set_cursor(offset);
 	putchar(' ');
 	set_cursor(offset);
-}
-
-void putchar(char character){
-	print_char(character, -1, -1, WHITE_ON_BLACK);
 }

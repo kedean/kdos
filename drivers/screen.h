@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../io/pipes.h"
+
 #define VIDEO_ADDRESS 0xb8000
 #define MAX_ROWS 25
 #define MAX_COLS 80
@@ -19,10 +21,6 @@
  * @param attribute_byte the attributes to give the character
  */
 void print_char(char character, int col, int row, char attribute_byte);
-/*
- * Prints the character to the screen at the current cursor location, and advances the cursor
- */
-void putchar(char character);
 
 /*
  * Removes all characters from the screen and resets the pointer
@@ -33,3 +31,9 @@ void clear_screen();
  * Removes the character just below the cursor, and retreats the cursor by 1
  */
 void remove_char();
+
+/**
+ * Clears the screen and replaces it with the tail contents of the given pipe.
+ * @param handle the pipe to read from
+ */
+void sync_screen_to_pipe(pipe_handle_t handle);

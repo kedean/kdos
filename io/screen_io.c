@@ -4,8 +4,16 @@
 
 #include <stdarg.h>
 
+pipe_handle_t stdout;
+pipe_handle_t stdout_reader;
+
 void screen_init(){
-	
+	stdout = pipe_create(5000);
+	stdout_reader = pipe_wrap_writeonly(stdout);
+}
+
+void screen_get_stdout_content(char* destination, uint_t length){
+	pipe_read(stdout_reader, destination, length);
 }
 
 void itoa(int value, char* buffer, int base){
@@ -99,7 +107,7 @@ void printf(const char* format, ...){
 
 	for(const char* p = format; *p != '\0'; p++){
 		if(*p != '%'){
-			print_char(*p, -1, -1, WHITE_ON_BLACK);
+			pipe_push(stdout, *p);
 		}
 		else{
 			switch(*++p){
@@ -115,7 +123,7 @@ void printf(const char* format, ...){
 					break;
 				case 'c': //char handler
 					int_value = va_arg(argptr, int);
-					print_char(int_value, -1, -1, WHITE_ON_BLACK);
+					pipe_push(stdout, int_value);
 					break;
 				case 'x': //hexadecimal handler
 					int_value = va_arg(argptr, int);
@@ -127,10 +135,19 @@ void printf(const char* format, ...){
 					printf(string_value);
 					break;
 				default: //if we dont' understand the format specifier, treat it as regular chars
-					print_char('%', -1, -1, WHITE_ON_BLACK);
-					print_char(*p, -1, -1, WHITE_ON_BLACK);
+					pipe_push(stdout, '%');
+					pipe_push(stdout, *p);
 					break;
 			}
 		}
 	}
+}
+
+void putchar(char character){
+	pipe_push(stdout, character);
+}
+
+char popchar(){
+	char out;
+	pipe_flush(stdout, 1);
 }

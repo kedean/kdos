@@ -1,6 +1,4 @@
-#include "../kernel/time.h"
-#include "../drivers/screen.h"
-#include "../kernel/types.h"
+#include "../kernel/system.h"
 
 void clock(){
   int hours = 0;
@@ -64,7 +62,7 @@ void clock(){
     sleep(1000);
 
     for(int i = 0; i < 10; i++){
-      remove_char();
+      popchar();
     }
   }
 }

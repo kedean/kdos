@@ -83,10 +83,15 @@ void pipe_write(pipe_handle_t handle, char* c, uint_t length){
 
 char pipe_pop(pipe_handle_t handle){
   char out;
-  cbuf_pop(pipes[handle].buffer, &out, 1);
+  cbuf_peek(pipes[handle].buffer, &out, 1);
   return out;
 }
 
 void pipe_read(pipe_handle_t handle, char* destination, uint_t length){
-  cbuf_pop(pipes[handle].buffer, destination, length);
+  cbuf_peek(pipes[handle].buffer, destination, length);
+}
+
+void pipe_flush(pipe_handle_t handle, uint_t length){
+  char bucket[length];
+  cbuf_pop(pipes[handle].buffer, bucket, length);
 }

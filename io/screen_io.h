@@ -8,6 +8,13 @@
 void screen_init();
 
 /**
+ * Fetches the current contents of stdout into a sized buffer.
+ * @param destination the buffer to inject the data into
+ * @param length the number of bytes to fetch
+ */
+void screen_get_stdout_content(char* destination, uint_t length);
+
+/**
  * Computes the string representation of the given value and places it into a buffer
  * @param value the value to stringify
  * @param buffer the character buffer to place the result in, must be large enough to accomodate
@@ -28,3 +35,14 @@ void uitoa(uint_t value, char* buffer);
  * @param format the format string
  */
 void printf(const char* format, ...);
+
+/*
+ * Prints the character to the screen at the current cursor location, and advances the cursor
+ */
+void putchar(char character);
+
+/**
+ * Removes one character from the screen and returns it
+ * @return the last character on screen
+ */
+char popchar();
